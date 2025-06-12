@@ -1,0 +1,22 @@
+canvas:
+  base_url: "https://canvas.example.edu"
+  client_id: "your_oauth_client_id"
+  client_secret: "your_oauth_client_secret"
+  redirect_uri: "urn:ietf:wg:oauth:2.0:oob"
+
+intentparser:
+  llm_api_key: "YOUR_LLM_API_KEY"
+  model: "gpt-4"
+
+fs: {}
+
+mcp:
+  orchestrator:
+    timeout_seconds: 30
+
+logging:
+  level: "info"
+  file: "~/.cli-agent/logs/cli-agent.log"
+
+cache:
+  assignments_ttl_minutes: 10

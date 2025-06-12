@@ -1,0 +1,8 @@
+bin/
+*.exe
+*.log
+*.sqlite
+.env
+.idea/
+.vscode/
+.initial_design
