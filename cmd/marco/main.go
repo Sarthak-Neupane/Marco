@@ -31,9 +31,18 @@ func main() {
 
             // 4. Parse intent (LLM-backed or fallback)
             ctx := context.Background()
-            intent, err := intentparser.LLM_Parse(ctx, input)
+            intent, err := intentparser.LLMParse(ctx, input)
             if err != nil {
                 return fmt.Errorf("parse error: %w", err)
+            }
+
+            fmt.Println("Parsed intent:", intent)
+            fmt.Println("Module:", intent.Module)
+            fmt.Println("Name:", intent.Name)
+            fmt.Println("Params:", intent.Params)
+
+            for key, value := range intent.Params {
+                fmt.Printf("Key: %s, Value: %s\n", key, value)
             }
 
             // 5. Route & execute

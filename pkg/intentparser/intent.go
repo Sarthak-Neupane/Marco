@@ -1,41 +1,102 @@
+// Package intentparser provides functionality to parse free-form user commands
+// into structured Intent objects via an LLM backend.
 package intentparser
 
 import (
-    "fmt"
     "context"
-    // "strings"
+    "encoding/json"
+    "fmt"
 
-    openai "github.com/sashabaranov/go-openai"
+    "github.com/openai/openai-go"
+    "github.com/openai/openai-go/option"
 )
 
-// Intent represents a parsed user intent
+const (
+    // systemPrompt is the system-level instruction to the LLM to emit only JSON.
+    systemPrompt = `You parse user commands into JSON intents. Output *only* JSON.`
+
+    // promptTemplate defines the few-shot examples and schema for transforming
+    // a raw user command into the desired JSON structure.
+    promptTemplate = `
+You are an intent parser. You must output *only* JSON matching this schema:
+
+{
+  "module": "fs",
+  "intent": "<intent name>",
+  "params": { ... }
+}
+
+Examples:
+User: "List all files in src"
+{"module":"fs","intent":"list_dir","params":{"path":"src"}}
+
+User: "Find TODO comments in pkg/"
+{"module":"fs","intent":"find_pattern","params":{"pattern":"TODO","path":"pkg"}}
+
+Now parse this command into JSON:
+---
+%s
+---
+`
+)
+
+// Intent represents the parsed output from the LLM.
+// Module specifies which MCP module to invoke (e.g., "fs" or "canvas").
+// Name is the specific operation within that module.
+// Params holds any additional key/value arguments for the intent.
 type Intent struct {
-    Module string                 `json:"module"`
-    Name   string                 `json:"intent"`
+    Module string            `json:"module"`
+    Name   string            `json:"intent"`
     Params map[string]string `json:"params"`
 }
 
+var (
+    // client is the shared OpenAI client instance. Must be initialized
+    // via Init before calling LLMParse.
+    client openai.Client
+)
 
-var llm_client *openai.Client
-
+// Init sets up the OpenAI client with the provided API key.
+// This function must be called once before invoking LLMParse.
 func Init(apiKey string) {
-    llm_client = openai.NewClient(apiKey)
+    client = openai.NewClient(
+		option.WithAPIKey(apiKey),
+	)
 }
 
-// Parse takes user input and returns an Intent.
-// Stub: integrate LLM or deterministic parser here.
-func LLM_Parse(ctx context.Context, cmd string) (*Intent, error) {
-    if llm_client == nil {
-        return nil, fmt.Errorf("LLM client not initialized")
+// LLMParse sends a natural-language command to the LLM, expecting
+// a JSON response that matches our Intent struct.
+// It returns an Intent on success, or an error if parsing fails.
+func LLMParse(ctx context.Context, userCmd string) (*Intent, error) {
+    // Build the chat messages by cloning the static base messages
+    // and appending the formatted user prompt.
+     // Build messages
+     messages := []openai.ChatCompletionMessageParamUnion{
+        openai.SystemMessage(systemPrompt),
+        openai.UserMessage(fmt.Sprintf(promptTemplate, userCmd)),
     }
 
-    fmt.Println("Parsing intent with LLM: ", cmd)
+    // Create the chat completion
+    resp, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+        Model:    "gpt-3.5-turbo", // or openai.GPT4
+        Messages: messages,
+    })
+    if err != nil {
+        return nil, fmt.Errorf("LLM API error: %w", err)
+    }
 
-    return &Intent{
-        Module: "fs", // Default to file system module for now
-        Name:   "list_files", // Default intent for now
-        Params: map[string]string{
-            "directory": ".", // Default to current directory
-        },
-    }, nil
+    // Extract the JSON string
+    raw := resp.Choices[0].Message.Content
+
+    // Unmarshal into your Intent struct
+    var intent Intent
+    if err := json.Unmarshal([]byte(raw), &intent); err != nil {
+        return nil, fmt.Errorf("invalid JSON from LLM: %w\nresponse: %s", err, raw)
+    }
+
+    // Validate required fields
+    if intent.Module == "" || intent.Name == "" {
+        return nil, fmt.Errorf("parsed JSON missing fields: %+v", intent)
+    }
+    return &intent, nil
 }
