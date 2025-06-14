@@ -19,7 +19,6 @@ type Intent struct {
 var llm_client *openai.Client
 
 func Init(apiKey string) {
-    fmt.Println("Parsing intent with LLM: ", apiKey)
     llm_client = openai.NewClient(apiKey)
 }
 
@@ -34,7 +33,7 @@ func LLM_Parse(ctx context.Context, cmd string) (*Intent, error) {
 
     return &Intent{
         Module: "fs", // Default to file system module for now
-        Name:   "", // Default intent for now
+        Name:   "list_files", // Default intent for now
         Params: map[string]string{
             "directory": ".", // Default to current directory
         },
