@@ -5,4 +5,11 @@ bin/
 .env
 .idea/
 .vscode/
-.initial_design
+
+
+
+initial_design.md
+POC.md
+
+config.yaml
+~/.marco/config.yaml

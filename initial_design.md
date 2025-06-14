@@ -11,6 +11,8 @@ Interactive flows: handle multi-step tasks (e.g. choose course, pick file, confi
 Help/usage: provide example phrases, “help” command listing available intents per module.
 Logging: record commands, API calls, responses for debugging; support dry-run mode.
 Configuration: allow base Canvas URL, OAuth client info, default course or folder paths, LLM API settings, module registry in a config file.
+
+
 Non-Functional Requirements
 Responsiveness: local parsing <100ms; show progress for network calls; overall CLI feedback within a few seconds for common operations.
 Reliability: handle network errors, token expiry, API rate limits with retries and clear user messages.
@@ -26,11 +28,15 @@ Access control: verify Canvas permissions before write operations; confirm destr
 Logging/privacy: avoid logging sensitive details or allow user to purge/disable sensitive logs.
 Input validation: sanitize file paths; prevent directory traversal.
 Dependency management: keep libraries up to date; verify plugin integrity.
+
+
 Performance & Availability
 Local parsing and dispatch must be near-instant.
 Canvas API calls: handle paginated requests and rate limits; cache results where appropriate.
 CLI should detect offline state and inform user or serve cached data.
 Optional background scheduling for periodic tasks (e.g. checking new assignments) with minimal resource use.
+
+
 Integration Requirements
 Canvas API: support configurable base URL; manage OAuth2 flow; handle pagination, rate limits; use REST endpoints.
 LLM/intent parser: read API keys from environment or secure store; validate parsed intents against schemas.
@@ -39,6 +45,8 @@ File-system: access OS file APIs safely across platforms.
 Optional: integrate with notification systems (desktop or email), calendar (e.g. Google Calendar), version control (e.g. Git), scheduler (cron or internal).
 Config management: use a user config file (~/.cli-agent-config) with overrides via environment variables.
 Testing: support mocks or sandbox Canvas instance; unit tests for intent parsing and module logic.
+
+
 Deployment Requirements
 Package CLI and modules as static binaries or installer; provide shell completion scripts.
 Provide a setup command to guide initial Canvas authentication and test connectivity.
